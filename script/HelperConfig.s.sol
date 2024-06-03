@@ -6,7 +6,7 @@ import {Script} from "forge-std/Script.sol";
 import {DecentralizedStableCoin} from "../src/DecentralizedStableCoin.sol";
 import {DSCEngine} from "../src/DSCEngine.sol";
 import {MockV3Aggregator} from "../test/mocks/MockV3Aggregator.sol";
-import {ERC20} from "../test/mocks/ERC20Mock.sol";
+import {ERC20Mock} from "../test/mocks/ERC20Mock.sol";
 
 contract HelperConfig is Script{
     struct NetworkConfig {
@@ -61,6 +61,6 @@ contract HelperConfig is Script{
             weth: address(wethMock),
             wbtc: address(wbtchMock),
             deployerKey: DEFAULT_ANVIL_KEY
-        })
+        });
     }
 }
