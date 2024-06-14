@@ -33,7 +33,7 @@ contract DSCEngine is ReentrancyGuard {
     ///////////////////
     error DSCEngine__NeedsMoreThanZero();
     error DSCEngine__TokenAddressesAndPriceFeedAddressesMustBeSameLength();
-    error DSCEngine__NotAllowedToken();
+    error DSCEngine__NotAllowedToken(address token);
     error DSCEngine__TransferFailed();
     error DSCEngine__BreaksHealthFactor(uint256 healthFactor);
     error DSCEngine__MintFailed();
@@ -77,7 +77,7 @@ contract DSCEngine is ReentrancyGuard {
 
     modifier isAllowedToken(address token) {
         if(s_priceFeeds[token] == address(0)){
-            revert DSCEngine__NotAllowedToken();
+            revert DSCEngine__NotAllowedToken(token);
         }
         _;
     }
@@ -135,7 +135,8 @@ contract DSCEngine is ReentrancyGuard {
      * @param amountDscToBurn The amount of DSC to burn
      * @notice This function burns DSC and redeems the underlying collateral in one transaction
      */
-    function redeemCollateralForDsc(address tokenCollateralAddress, uint256 amountCollateral, uint256 amountDscToBurn) external{
+    function redeemCollateralForDsc(address tokenCollateralAddress, uint256 amountCollateral, uint256 amountDscToBurn) external moreThanZero(amountCollateral)
+        isAllowedToken(tokenCollateralAddress){
         burnDsc(amountDscToBurn);
         redeemCollateral(tokenCollateralAddress, amountCollateral);
     }
@@ -171,13 +172,13 @@ contract DSCEngine is ReentrancyGuard {
 
     /**
      * 
-     * @param tokenCollateralAddress The address of the token colalteral to liquidate from the user
+     * @param tokenCollateralAddress The address of the token collateral to liquidate from the user
      * @param user The user who has broken the health factor. Their _healthFactor should be below MIN_HEALTH_FACTOR
      * @param debtToCover The amount of DSC you want to burn to improve the user's health factor
-     * @notice You can partiually liquidate a user
+     * @notice You can partially liquidate a user
      * @notice You will get a liquidation bonus for taking the users funds
      * @notice This function working assumes the protocol will be roughly 200% overcollateralized in order for this to work.
-     * @notice A known bug would be if the protocol were 100% or less colalteralized, then we wouldn't be able to incentive
+     * @notice A known bug would be if the protocol were 100% or less collateralized, then we wouldn't be able to incentive
      * the liquidators. For example, if the price of the collateral plummeted before anyone could be liquidated. 
      */
     function liquidate(address tokenCollateralAddress, address user, uint256 debtToCover) external moreThanZero(debtToCover) nonReentrant{
@@ -235,8 +236,13 @@ contract DSCEngine is ReentrancyGuard {
      */
     function _healthFactor(address user) private view returns(uint256) {
         (uint256 totalDscMinted, uint256 collateralValueInUsd) = _getAccountInformation(user);
-        uint256 collateralAdjustedForThreshold = (collateralValueInUsd * LIQUIDATION_THRESHOLD) / LIQUIDATION_PRECISION;
-        return (collateralAdjustedForThreshold * PRECISION) / totalDscMinted;
+        if (totalDscMinted == 0){
+            return type(uint256).max;
+        } else{
+            uint256 collateralAdjustedForThreshold = (collateralValueInUsd * LIQUIDATION_THRESHOLD) / LIQUIDATION_PRECISION;
+            return (collateralAdjustedForThreshold * PRECISION) / totalDscMinted;
+        }
+        
     }
 
     function _revertIfHealthFactorIsBroken(address user) internal view{
@@ -274,5 +280,54 @@ contract DSCEngine is ReentrancyGuard {
     function getAccountInformation(address user) external view returns(uint256 totalDscMinted, uint256 collateralValueInUsd){
         (totalDscMinted, collateralValueInUsd) = _getAccountInformation(user);
     }
+
+    function getAmountDscMinted(address user) external view returns(uint256){
+        return s_DSCMinted[user];
+    }
+
+    function getHealthFactor(address user) external view returns(uint256){
+        return _healthFactor(user);
+    }
+
+    function getCollateralDeposited(address user, address token) external view returns(uint256){
+        return s_collateralDeposited[user][token];
+    }
+
+    function getCollateralTokenPriceFeed(address token) external  view returns(address){
+        return s_priceFeeds[token];
+    }
+
+    function getCollateralTokens() external view returns(address[] memory){
+        return s_collateralTokens;
+    }
+
+    function getMinHealthFactor() external view returns(uint256){
+        return MIN_HEALTH_FACTOR;
+    }
+
+    function getLiquidationThreshold() external view returns(uint256){
+        return LIQUIDATION_THRESHOLD;
+    }
+
+    function getLiquidationBonus() external pure returns (uint256) {
+        return LIQUIDATION_BONUS;
+    }
+
+    function getLiquidationPrecision() external pure returns (uint256) {
+        return LIQUIDATION_PRECISION;
+    }
+
+    function getCollateralBalanceOfUser(address user, address token) external view returns (uint256) {
+        return s_collateralDeposited[user][token];
+    }
+
+    function getDsc() external view returns (address) {
+        return address(i_dsc);
+    }
+
+    function revertIfHealthFactorIsBroken(address user) external view{
+        return _revertIfHealthFactorIsBroken(user);
+    }
+
 
 }
