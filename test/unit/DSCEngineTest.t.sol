@@ -353,7 +353,7 @@ contract DSCEngineTest is Test {
         engine.liquidate(address(weth), address(USER), DEBT_TO_COVER);
         vm.stopPrank();
     }
-    
+
     modifier liquidated() {
         vm.startPrank(USER);
         ERC20Mock(weth).approve(address(engine), AMOUNT_COLLATERAL);
@@ -407,6 +407,7 @@ contract DSCEngineTest is Test {
         (uint256 userDscMinted,) = engine.getAccountInformation(USER);
         assertEq(userDscMinted, 0);
     }
+
 
      ///////////////////////////////////
     // View & Pure Function Tests //
