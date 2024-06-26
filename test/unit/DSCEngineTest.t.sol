@@ -412,22 +412,22 @@ contract DSCEngineTest is Test {
      ///////////////////////////////////
     // View & Pure Function Tests //
     //////////////////////////////////
-    function testGetCollateralTokenPriceFeed() public {
+    function testGetCollateralTokenPriceFeed() public view{
         address priceFeed = engine.getCollateralTokenPriceFeed(weth);
         assertEq(priceFeed, ethUsdPriceFeed);
     }
 
-    function testGetCollateralTokens() public {
+    function testGetCollateralTokens() public view{
         address[] memory collateralTokens = engine.getCollateralTokens();
         assertEq(collateralTokens[0], weth);
     }
 
-    function testGetMinHealthFactor() public {
+    function testGetMinHealthFactor() public view{
         uint256 minHealthFactor = engine.getMinHealthFactor();
         assertEq(minHealthFactor, MIN_HEALTH_FACTOR);
     }
 
-    function testGetLiquidationThreshold() public {
+    function testGetLiquidationThreshold() public view{
         uint256 liquidationThreshold = engine.getLiquidationThreshold();
         assertEq(liquidationThreshold, LIQUIDATION_THRESHOLD);
     }
@@ -457,12 +457,12 @@ contract DSCEngineTest is Test {
         assertEq(collateralValue, expectedCollateralValue);
     }
 
-    function testGetDsc() public {
+    function testGetDsc() public view{
         address dscAddress = engine.getDsc();
         assertEq(dscAddress, address(dsc));
     }
 
-    function testLiquidationPrecision() public {
+    function testLiquidationPrecision() public view{
         uint256 expectedLiquidationPrecision = 100;
         uint256 actualLiquidationPrecision = engine.getLiquidationPrecision();
         assertEq(actualLiquidationPrecision, expectedLiquidationPrecision);
